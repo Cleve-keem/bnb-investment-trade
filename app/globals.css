@@ -38,6 +38,12 @@
   }
 
   input {
-    @apply border border-brand/50 w-full;
+    @apply border border-brand/50 w-full mb-3;
+  }
+}
+
+@layer component {
+  .form-input {
+    @apply h-10 px-2 rounded-md border border-brand/40;
   }
 }

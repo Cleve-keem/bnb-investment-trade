@@ -1,4 +1,7 @@
+import FormField from "@/components/forms/FormField";
 import Logo from "@/components/Logo";
+import { registerationConstants } from "@/constants/register";
+import { constants } from "buffer";
 
 export default function RegistrationPage() {
   return (
@@ -12,100 +15,27 @@ export default function RegistrationPage() {
           </h2>
           <p>Secure . Reliable . Trusted</p>
         </div>
-        <div className="border border-[#e9cf393a] p-4 rounded-md">
+        <div className="border border-[#e9cf393a] p-6 rounded-md">
           <a
             href="/login"
-            className="hover:underline text-gray-400 text-sm mb-2 block"
+            className="hover:underline text-gray-400 text-xs mb-2 block"
           >
             &larr; Back to Login
           </a>
-          <h3 className="font-semibold mb-1">Create Account</h3>
+          <h3 className="font-semibold text-2xl mb-1">Create Account</h3>
           <p className="text-[12px] mb-5">
             Fill in your details to get started
           </p>
 
           <form>
-            <label htmlFor="username">Username</label>
-            <div>
-              <span></span>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                required
-                placeholder="Enter your username"
-              />
-            </div>
-
-            <label htmlFor="name">Name</label>
-            <div className="flex">
-              <input
-                type="firstname"
-                id="firstname"
-                name="firstname"
-                required
-                placeholder="First name"
-              />
-              <input
-                type="middlename"
-                id="middlename"
-                name="middlename"
-                required
-                placeholder="Middle name"
-              />
-              <input
-                type="lastname"
-                id="lastname"
-                name="lastname"
-                required
-                placeholder="Last name"
-              />
-            </div>
-            <div>
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                placeholder="Enter your email"
-              />
-            </div>
-            <div>
-              <label htmlFor="phone">Phone number</label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                required
-                placeholder="Enter your phone number"
-              />
-            </div>
-            <div>
-              <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                required
-                placeholder="Enter your password"
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                required
-                placeholder="Confirm your password"
-              />
-            </div>
+            {registerationConstants.map((field) => (
+              <FormField key={field.id} field={field} />
+            ))}
             <button
               type="submit"
-              className="w-full bg-[#e9ce39] text-black font-semibold py-2 rounded-md mt-4"
+              className="w-full bg-[#dabc17] text-black font-semibold py-2 rounded-md mt-4"
             >
-              Register
+              Finish Signing Up
             </button>
           </form>
         </div>
