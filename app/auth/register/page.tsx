@@ -2,7 +2,7 @@ import Logo from "@/components/Logo";
 
 export default function RegistrationPage() {
   return (
-    <div className="flex justify-center items-center h-screen p-3 bg-black text-white">
+    <div className="flex justify-center items-center min-h-screen p-3 bg-black text-white">
       <div>
         {/* header */}
         <div className="flex flex-col items-center gap-2 mb-8">
@@ -28,25 +28,85 @@ export default function RegistrationPage() {
             <label htmlFor="username">Username</label>
             <div>
               <span></span>
-              <input type="text" id="username" name="username" required />
+              <input
+                type="text"
+                id="username"
+                name="username"
+                required
+                placeholder="Enter your username"
+              />
             </div>
 
-            <label>Name</label>
+            <label htmlFor="name">Name</label>
             <div className="flex">
               <input
                 type="firstname"
                 id="firstname"
                 name="firstname"
                 required
+                placeholder="First name"
               />
               <input
                 type="middlename"
                 id="middlename"
                 name="middlename"
                 required
+                placeholder="Middle name"
               />
-              <input type="lastname" id="lastname" name="lastname" required />
+              <input
+                type="lastname"
+                id="lastname"
+                name="lastname"
+                required
+                placeholder="Last name"
+              />
             </div>
+            <div>
+              <label htmlFor="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                placeholder="Enter your email"
+              />
+            </div>
+            <div>
+              <label htmlFor="phone">Phone number</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                required
+                placeholder="Enter your phone number"
+              />
+            </div>
+            <div>
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                placeholder="Enter your password"
+              />
+            </div>
+            <div>
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                required
+                placeholder="Confirm your password"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-[#e9ce39] text-black font-semibold py-2 rounded-md mt-4"
+            >
+              Register
+            </button>
           </form>
         </div>
       </div>
