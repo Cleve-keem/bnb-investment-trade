@@ -1,7 +1,8 @@
+"use client";
+
 import FormField from "@/components/forms/FormField";
 import Logo from "@/components/Logo";
-import { registerationConstants } from "@/constants/register";
-import { constants } from "buffer";
+import { registrationConstants } from "@/constants/register";
 
 export default function RegistrationPage() {
   return (
@@ -28,16 +29,27 @@ export default function RegistrationPage() {
           </p>
 
           <form>
-            {registerationConstants.map((field) => (
+            {registrationConstants.map((field) => (
               <FormField key={field.id} field={field} />
             ))}
             <button
               type="submit"
-              className="w-full bg-[#dabc17] text-black font-semibold py-2 rounded-md mt-4"
+              className="w-full bg-[#dabc17] text-black font-semibold py-2 rounded-md my-4"
             >
               Finish Signing Up
             </button>
           </form>
+
+          <p className="text-gray-400 text-xs text-center">
+            By creating an account, you agree to our{" "}
+            <span className="hover:underline text-brand cursor-pointer">
+              Terms of Service
+            </span>{" "}
+            and{" "}
+            <span className="hover:underline text-brand cursor-pointer">
+              Privacy Policy
+            </span>
+          </p>
         </div>
       </div>
     </div>
