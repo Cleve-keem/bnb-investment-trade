@@ -12,7 +12,7 @@ export default function Onboarding() {
   }, []);
 
   return (
-    <div className="flex items-center h-screen p-4 bg-black">
+    <div className="flex items-center h-screen p-4 bg-black text-white">
       <div className="">
         <p className="text-sm mb-1">Welcome to</p>
         <div className="flex items-center">

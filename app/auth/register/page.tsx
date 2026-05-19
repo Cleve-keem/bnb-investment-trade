@@ -2,7 +2,7 @@ import Logo from "@/components/Logo";
 
 export default function RegistrationPage() {
   return (
-    <div className="flex justify-center items-center h-screen p-3 bg-black">
+    <div className="flex justify-center items-center h-screen p-3 bg-black text-white">
       <div>
         {/* header */}
         <div className="flex flex-col items-center gap-2 mb-8">
