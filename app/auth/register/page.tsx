@@ -2,7 +2,8 @@
 
 import FormField from "@/components/forms/FormField";
 import Logo from "@/components/Logo";
-import { registrationConstants } from "@/constants/register";
+import { registrationConstants } from "@/constants/auth";
+import Link from "next/link";
 
 export default function RegistrationPage() {
   return (
@@ -17,12 +18,12 @@ export default function RegistrationPage() {
           <p>Secure . Reliable . Trusted</p>
         </div>
         <div className="border border-[#e9cf393a] p-6 rounded-md">
-          <a
-            href="/login"
+          <Link
+            href="/auth/login"
             className="hover:underline text-gray-400 text-xs mb-2 block"
           >
             &larr; Back to Login
-          </a>
+          </Link>
           <h3 className="font-semibold text-2xl mb-1">Create Account</h3>
           <p className="text-[12px] mb-5">
             Fill in your details to get started
