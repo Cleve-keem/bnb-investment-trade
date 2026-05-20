@@ -4,6 +4,7 @@ import FormField from "@/components/forms/FormField";
 import Logo from "@/components/Logo";
 import { loginConstants } from "@/constants/auth";
 import { ShieldCheck, UserPlus } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
@@ -38,13 +39,14 @@ export default function LoginPage() {
               <span>or</span>
               <span className="w-full h-px bg-gray-800 block"></span>
             </div>
-            <button
+            <Link
+              href="/auth/register"
               type="button"
               className="flex items-center justify-center gap-2 w-full border border-[#e9cf393a] text-xs text-brand py-2 rounded-md my-4"
             >
               <UserPlus size={15} />
               Create Account
-            </button>
+            </Link>
           </form>
         </div>
 

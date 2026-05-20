@@ -41,7 +41,7 @@ export default function RegistrationPage() {
             </button>
           </form>
 
-          <p className="text-gray-400 text-xs text-center">
+          <p className="text-gray-400 text-xs text-center mt-5">
             By creating an account, you agree to our{" "}
             <span className="hover:underline text-brand cursor-pointer">
               Terms of Service
