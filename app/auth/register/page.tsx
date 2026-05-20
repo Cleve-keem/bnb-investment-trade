@@ -13,7 +13,8 @@ export default function RegistrationPage() {
         <div className="flex flex-col items-center gap-2 mb-8">
           <Logo />
           <h2 className="text-xl">
-            <span className="text-[#e9ce39] font-semibold">BNB</span> Investment Trade
+            <span className="text-[#e9ce39] font-semibold">BNB</span> Investment
+            Trade
           </h2>
           <p className="text-xs">Secure . Reliable . Trusted</p>
         </div>
