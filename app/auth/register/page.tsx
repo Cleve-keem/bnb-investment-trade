@@ -8,14 +8,14 @@ import Link from "next/link";
 export default function RegistrationPage() {
   return (
     <div className="flex justify-center items-center min-h-screen p-3 bg-black text-white">
-      <div>
+      <div className="p-4">
         {/* header */}
         <div className="flex flex-col items-center gap-2 mb-8">
           <Logo />
-          <h2 className="font-bold">
-            <span className="text-[#e9ce39]">BNB</span> Investment Trade
+          <h2 className="text-xl">
+            <span className="text-[#e9ce39] font-semibold">BNB</span> Investment Trade
           </h2>
-          <p>Secure . Reliable . Trusted</p>
+          <p className="text-xs">Secure . Reliable . Trusted</p>
         </div>
         <div className="border border-[#e9cf393a] p-6 rounded-md">
           <Link
