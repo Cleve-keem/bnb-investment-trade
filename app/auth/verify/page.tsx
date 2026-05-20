@@ -54,7 +54,6 @@ export default function VerifyAccount() {
             </span>
           </div>
         </div>
-
         {/* Resend Actions */}
         <div className="text-center space-y-5">
           <button className="h-10 px-6 rounded-xl border border-dashed border-zinc-700 text-sm text-zinc-300 hover:text-white hover:border-yellow-500 hover:bg-yellow-500/5 transition-all active:scale-[0.98]">
