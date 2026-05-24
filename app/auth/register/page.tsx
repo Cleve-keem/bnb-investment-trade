@@ -3,9 +3,47 @@
 import FormField from "@/components/forms/FormField";
 import Logo from "@/components/Logo";
 import { registrationConstants } from "@/constants/auth";
+import AuthService from "@/services/auth";
+import { RegistrationFormType } from "@/types/auth";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function RegistrationPage() {
+  const [registrationData, setRegistrationData] =
+    useState<RegistrationFormType>({
+      username: "",
+      firstname: "",
+      lastname: "",
+      middlename: "",
+      email: "",
+      phoneNumber: "",
+      password: "",
+      confirmPassword: "",
+    });
+
+  const router = useRouter();
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    try {
+      await AuthService.registerUser(registrationData);
+      toast.success("Account created successfully!");
+      router.push("/auth/verify-email");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }
+
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    setRegistrationData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+
   return (
     <div className="flex justify-center items-center min-h-screen p-3 bg-black text-white">
       <div className="p-4">
@@ -30,9 +68,14 @@ export default function RegistrationPage() {
             Fill in your details to get started
           </p>
 
-          <form>
+          <form onSubmit={handleSubmit}>
             {registrationConstants.map((field) => (
-              <FormField key={field.id} field={field} />
+              <FormField
+                key={field.id}
+                field={field}
+                values={registrationData}
+                onChange={handleInputChange}
+              />
             ))}
             <button
               type="submit"

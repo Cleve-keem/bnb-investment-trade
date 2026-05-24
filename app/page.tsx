@@ -6,7 +6,7 @@ import { useEffect } from "react";
 export default function Onboarding() {
   useEffect(() => {
     const timer = setTimeout(() => {
-      window.location.href = "/auth/register";
+      window.location.href = "/auth/login";
     }, 3000);
     return () => clearTimeout(timer);
   }, []);

@@ -9,7 +9,7 @@ export default function Logo() {
         fill
         className="object-cover"
         priority
-        sizes=""
+        sizes="(max-width: 768px) 48px, 48px"
       />
     </div>
   );

@@ -26,7 +26,7 @@ export default function LoginPage() {
           </p>
           <form>
             {loginConstants.map((field) => (
-              <FormField key={field.id} field={field} />
+              <FormField key={field.id} field={field}/>
             ))}
             <button
               type="submit"

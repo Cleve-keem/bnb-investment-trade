@@ -10,14 +10,18 @@ interface FieldProps {
     type: string;
     icon: LucideIcon | null;
   };
+  values?: Record<string, string>;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export default function FormField({ field }: FieldProps) {
+export default function FormField({ field, values, onChange }: FieldProps) {
   const [showPassword, setShowPassword] = React.useState(false);
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
   };
+
+  const currentValues = values || {};
 
   if (field.name === "Name") {
     return (
@@ -35,7 +39,9 @@ export default function FormField({ field }: FieldProps) {
             name="firstname"
             className="form-input w-full border border-gray-800 rounded-md"
             required
+            value={currentValues.firstname || ""}
             placeholder="First name"
+            onChange={onChange}
           />
           <input
             type="text"
@@ -43,7 +49,9 @@ export default function FormField({ field }: FieldProps) {
             name="middlename"
             className="form-input w-full border border-gray-800 rounded-md"
             required
+            value={currentValues.middlename || ""}
             placeholder="Middle name"
+            onChange={onChange}
           />
           <input
             type="text"
@@ -51,14 +59,18 @@ export default function FormField({ field }: FieldProps) {
             name="lastname"
             className="form-input w-full border border-gray-800 rounded-md"
             required
+            value={currentValues.lastname || ""}
             placeholder="Last name"
+            onChange={onChange}
           />
         </div>
       </div>
     );
   }
 
-  const fieldId = field.name.toLowerCase().replace(/\s+/g, "-");
+  const fieldId = field.name
+    .toLowerCase()
+    .replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase());
 
   if (field.name === "Password" || field.name === "Confirm Password") {
     return (
@@ -78,7 +90,9 @@ export default function FormField({ field }: FieldProps) {
               name={fieldId}
               className={`form-input w-full ${field.icon ? "pl-10" : "px-3"}`}
               required
+              value={currentValues[fieldId] || ""}
               placeholder={`Enter your ${field.name.toLowerCase()}`}
+              onChange={onChange}
             />
             <button
               type="button"
@@ -111,9 +125,11 @@ export default function FormField({ field }: FieldProps) {
           type={field.type}
           id={fieldId}
           name={fieldId}
+          value={currentValues[fieldId] || ""}
           className={`form-input w-full ${field.icon ? "pl-10" : "px-3"}`}
           required
           placeholder={`Enter your ${field.name.toLowerCase()}`}
+          onChange={onChange}
         />
       </div>
     </div>
