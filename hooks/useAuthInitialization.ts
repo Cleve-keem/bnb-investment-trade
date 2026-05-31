@@ -23,7 +23,8 @@ export function useAuthInitialization() {
           middleName: session.user.user_metadata?.middle_name || "",
           lastName: session.user.user_metadata?.last_name || "",
           phoneNumber: session.user.user_metadata?.phone_number || "",
-          isVerified: session.user.email_confirmed_at ? true : false,
+          isEmailVerified: session.user.email_confirmed_at ? true : false,
+          isOtpVerified: false,
         });
       } else {
         clearSession();
@@ -44,7 +45,8 @@ export function useAuthInitialization() {
           middleName: session.user.user_metadata?.middle_name || "",
           lastName: session.user.user_metadata?.last_name || "",
           phoneNumber: session.user.user_metadata?.phone_number || "",
-          isVerified: session.user.email_confirmed_at ? true : false,
+          isEmailVerified: session.user.email_confirmed_at ? true : false,
+          isOtpVerified: false,
         });
       } else {
         clearSession();
