@@ -1,15 +1,9 @@
+import { LoginSchemaInput } from "@/libs/validations/auth";
 import { RegistrationFormType } from "@/types/auth";
 import supabase from "@/utils/supabase/supabaseClient";
 
 export default class AuthService {
   static async registerUser(credentials: RegistrationFormType) {
-    // 1. Advance Client Guard Check before network request
-    if (credentials.password !== credentials.confirmPassword) {
-      throw new Error(
-        "Passwords do not match. Please verify your credentials.",
-      );
-    }
-
     try {
       const { data, error } = await supabase.auth.signUp({
         email: credentials.email.trim(),
@@ -23,7 +17,7 @@ export default class AuthService {
             username: credentials.username.trim(),
             first_name: credentials.firstname.trim(),
             last_name: credentials.lastname.trim(),
-            middle_name: credentials.middlename.trim(),
+            middle_name: credentials?.middlename?.trim(),
             phone_number: credentials.phoneNumber.trim(),
           },
         },
@@ -32,7 +26,6 @@ export default class AuthService {
       if (error) throw error;
       return data;
     } catch (error: any) {
-      // 2. Transpile system strings to humanized localized UX messages
       let friendlyMessage =
         error.message ||
         "An unexpected error occurred during profile registration.";
@@ -46,34 +39,19 @@ export default class AuthService {
       throw new Error(friendlyMessage);
     }
   }
+
+  static async loginUser(credential: LoginSchemaInput) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credential.email,
+        password: credential.password,
+      });
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      throw new Error(
+        error.message || "An unexpected error occurred Loggin in.",
+      );
+    }
+  }
 }
-
-// import { RegistrationFormType } from "@/types/auth";
-// import supabase from "@/utils/supabase/supabaseClient";
-
-// export default class AuthService {
-//   static async registerUser(credentials: RegistrationFormType) {
-//     try {
-//       const { data, error } = await supabase.auth.signUp({
-//         email: credentials.email,
-//         password: credentials.password,
-//         options: {
-//           data: {
-//             first_name: credentials.firstname,
-//             last_name: credentials.lastname,
-//             middle_name: credentials.middlename,
-//             phone_number: credentials.phoneNumber,
-//           },
-//         },
-//       });
-
-//       if (error) {
-//         throw error;
-//       }
-
-//       return data;
-//     } catch (error: any) {
-//       throw error;
-//     }
-//   }
-// }

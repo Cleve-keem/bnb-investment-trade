@@ -6,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Shield, TrendingUp, BarChart3, ArrowRight } from "lucide-react";
 import supabase from "@/utils/supabase/supabaseClient";
-import Logo from "@/components/Logo";
 
 export default function Home() {
   const router = useRouter();

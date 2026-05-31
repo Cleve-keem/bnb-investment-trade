@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -8,33 +7,40 @@ import Logo from "@/components/Logo";
 import FormField from "@/components/forms/FormField";
 import { registrationConstants } from "@/constants/auth";
 import AuthService from "@/services/auth";
-import { RegistrationFormType } from "@/types/auth";
+import { useForm } from "react-hook-form";
+import { registerSchema, RegisterSchemaInput } from "@/libs/validations/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function RegistrationPage() {
-  const [registrationData, setRegistrationData] =
-    useState<RegistrationFormType>({
-      username: "",
-      firstname: "",
-      lastname: "",
-      middlename: "",
-      email: "",
-      phoneNumber: "",
-      password: "",
-      confirmPassword: "",
-    });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterSchemaInput>({
+    resolver: zodResolver(registerSchema),
+  });
+  const setSession = useAuthStore((state) => state.setSession);
   const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
+  async function onSubmit(data: RegisterSchemaInput) {
     const loadingToast = toast.loading("Processing validation records...");
 
     try {
-      await AuthService.registerUser(registrationData);
+      const authResult = await AuthService.registerUser(data);
+      if (authResult?.user) {
+        setSession({
+          id: authResult.user.id,
+          email: authResult.user.email || "",
+          username: authResult.user.user_metadata?.username || "",
+          firstName: authResult.user.user_metadata?.first_name || "",
+          middleName: authResult.user.user_metadata?.middle_name || "",
+          lastName: authResult.user.user_metadata?.last_name || "",
+          phoneNumber: authResult.user.user_metadata?.phone_number || "",
+          isEmailVerified: authResult.user.email_confirmed_at ? true : false,
+          isOtpVerified: false,
+        });
+      }
       toast.dismiss(loadingToast);
       toast.success(
         "Security profile initialized! Check your email to verify authorization.",
@@ -43,13 +49,7 @@ export default function RegistrationPage() {
     } catch (error: any) {
       toast.dismiss(loadingToast);
       toast.error(error.message || "Registration failed.");
-      setIsSubmitting(false);
     }
-  }
-
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target;
-    setRegistrationData((prev) => ({ ...prev, [name]: value }));
   }
 
   return (
@@ -80,15 +80,27 @@ export default function RegistrationPage() {
             Verify your compliance parameters to access active ledgers.
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-1">
-            {registrationConstants.map((field) => (
-              <FormField
-                key={field.id}
-                field={field}
-                values={registrationData}
-                onChange={handleInputChange}
-              />
-            ))}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-1">
+            {registrationConstants.map((field) => {
+              const fieldError =
+                errors[field.fieldName as keyof RegisterSchemaInput]?.message;
+
+              let nameGroupError = undefined;
+              if (field.fieldName === "nameGroup") {
+                nameGroupError =
+                  errors.firstname?.message ||
+                  errors.middlename?.message ||
+                  errors.lastname?.message;
+              }
+              return (
+                <FormField
+                  key={field.id}
+                  field={field}
+                  register={register}
+                  error={fieldError || nameGroupError}
+                />
+              );
+            })}
 
             <button
               type="submit"

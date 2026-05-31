@@ -3,7 +3,7 @@ export type RegistrationFormType = {
   firstname: string;
   email: string;
   lastname: string;
-  middlename: string;
+  middlename?: string | undefined;
   phoneNumber: string;
   password: string;
   confirmPassword: string;
