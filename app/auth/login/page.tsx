@@ -5,8 +5,8 @@ import Logo from "@/components/Logo";
 import { loginConstants } from "@/constants/auth";
 import { loginSchema, LoginSchemaInput } from "@/libs/validations/auth";
 import AuthService from "@/services/auth";
-import { useAuthStore } from "@/store/useAuthStore";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,42 +14,59 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 export default function LoginPage() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginSchemaInput>({
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+const { register, handleSubmit, formState: { errors } } = useForm<LoginSchemaInput>({
     resolver: zodResolver(loginSchema),
   });
-  const setSession = useAuthStore((state) => state.setSession);
-  const router = useRouter();
 
-  const onSubmit = async (data: LoginSchemaInput) => {
-    const loadingToast = toast.loading("Logging in...");
+ const loginMutation = useMutation({
+    mutationFn: async (credentials: LoginSchemaInput) => {
+      const authResult = await AuthService.loginUser(credentials);
+      if (!authResult?.user) throw new Error("Authentication node rejection.");
+      return authResult;
+    },
+    onMutate: () => {
+      return toast.loading("Verifying transaction credentials...");
+    },
+    onSuccess: async (data, variables, contextToastId) => {
+      toast.dismiss(contextToastId);
+      toast.success("Identity verified! Dispatching authentication code...");
 
-    try {
-      const authResult = await AuthService.loginUser(data);
-      if (authResult?.user) {
-        setSession({
-          id: authResult.user.id,
-          email: authResult.user.email || "",
-          username: authResult.user.user_metadata?.username || "",
-          firstName: authResult.user.user_metadata?.first_name || "",
-          middleName: authResult.user.user_metadata?.middle_name || "",
-          lastName: authResult.user.user_metadata?.last_name || "",
-          phoneNumber: authResult.user.user_metadata?.phone_number || "",
-          isEmailVerified: authResult.user.email_confirmed_at ? true : false,
-          isOtpVerified: false,
+      // Hydrate TanStack's cache immediately so the user's data is available across the app
+      queryClient.setQueryData(["auth-user"], {
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.user_metadata?.username || "Investor",
+        firstName: data.user.user_metadata?.first_name || "",
+        lastName: data.user.user_metadata?.last_name || "",
+        isVerified: !!data.user.email_confirmed_at,
+        isOtpVerified: false,
+      });
+
+      // Trigger our server side OTP delivery endpoint
+      try {
+        await fetch("/api/auth/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: data.user.id,
+            email: data.user.email,
+            firstName: data.user.user_metadata?.first_name || "",
+          }),
         });
+        
+        router.push("/auth/verify-otp");
+      } catch (err) {
+        toast.error("Failed to seed transaction OTP. Contact network manager.");
       }
-      toast.dismiss(loadingToast);
-      toast.success("Check your email to calm your secure code!");
-      router.push("/auth/verify-otp");
-    } catch (error: any) {
-      toast.dismiss(loadingToast);
-      toast.error(error.message || "Login failed.");
-    }
-  };
+    },
+    onError: (error: any, variables, contextToastId) => {
+      toast.dismiss(contextToastId);
+      toast.error(error.message || "Invalid login credentials.");
+    },
+  })
 
   return (
     <div className="flex justify-center items-center min-h-screen p-3 bg-black text-white">
@@ -68,7 +85,7 @@ export default function LoginPage() {
           <p className="text-[12px] mb-5 text-gray-400">
             Please login to your account
           </p>
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit((values) => loginMutation.mutate(values))} className="flex flex-col">
             {loginConstants.map((field) => {
               const fieldError =
                 errors[field.fieldName as keyof LoginSchemaInput]?.message;
@@ -83,14 +100,14 @@ export default function LoginPage() {
             })}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loginMutation.isPending}
               className={`w-full bg-[#dabc17] text-black font-bold py-2.5 rounded-md my-4 text-sm tracking-wide transition-all ${
-                isSubmitting
+                loginMutation.isPending
                   ? "opacity-50 cursor-not-allowed scale-[0.99]"
                   : "hover:bg-[#ebd026] active:scale-[0.98]"
               }`}
             >
-              {isSubmitting ? "Opening Secure Session..." : "Login"}
+              {loginMutation.isPending ? "Opening Secure Session..." : "Login"}
             </button>
             {/* ------------ or -------- */}
             <div className="flex items-center gap-2 text-gray-600 text-xs text-center my-2">

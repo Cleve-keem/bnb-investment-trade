@@ -2,43 +2,67 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
 import { KeyRound, ShieldAlert, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import Logo from "@/components/Logo";
+import { useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@/hooks/useUser";
 
-export default function VerifyOtpPage() {
+export default function VerifyOtpForm() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const router = useRouter();
-  
-  const user = useAuthStore((state) => state.user);
-  // Grab our store state mutator action
-  // const updateProfile = useAuthStore((state) => useAuthStore.getState().updateProfile);
 
-  const handleVerify = async (e: React.FormEvent) => {
+  const { data: user } = useUser();
+
+  const handleVerifySuccess = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (otp.length < 6) {
       toast.error("Please enter a valid 6-digit cryptographic security code.");
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error("No active session context found. Please log in again.");
+      router.push("/auth/login");
       return;
     }
 
     setIsVerifying(true);
     const loadingToast = toast.loading("Validating OTP authentication node...");
 
-    try {
-      // 🚀 REST API/Edge Function Call: Send the code to your backend to verify
-      // const response = await AuthService.verifyOtpCode(user?.email, otp);
-      
-      // Simulating a successful code validation match loop for verification setup:
-      if (otp === "123456") { // Replace with your backend verification result logic
-        // updateProfile({ isOtpVerified: true });
-        toast.dismiss(loadingToast);
-        toast.success("Identity authorization verified. Ledger access granted.");
-        router.push("/dashboard");
-      } else {
-        throw new Error("Invalid security token code. Access denied.");
+    try {      
+      // 🚀 FIX 2: Swap the fake verification check for your real backend verification route API call
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          userId: user.id, 
+          code: otp 
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Mismatched validation credentials.");
       }
+
+      // 3. Directly patch the current auth-user cache state values to unlock route gates
+      queryClient.setQueryData(["auth-user"], (oldData: any) => {
+        if (!oldData) return null;
+        return {
+          ...oldData,
+          isOtpVerified: true,
+        };
+      });
+
+      toast.dismiss(loadingToast);
+      toast.success("Identity authorization verified. Ledger access granted.");
+      router.push("/dashboard"); // Redirect to home dashboard
+      
     } catch (error: any) {
       toast.dismiss(loadingToast);
       toast.error(error.message || "OTP verification failed.");
@@ -58,11 +82,11 @@ export default function VerifyOtpPage() {
           <div>
             <h3 className="font-bold text-xl text-white mb-1">Two-Factor Authorization</h3>
             <p className="text-xs text-gray-400">
-              An encrypted one-time security code was sent to <span className="text-white font-medium">{user?.email || "your registered email"}</span>.
+              An encrypted one-time security code was sent to <span className="text-white font-medium">{user?.email}</span>.
             </p>
           </div>
 
-          <form onSubmit={handleVerify} className="space-y-4">
+          <form onSubmit={handleVerifySuccess} className="space-y-4">
             <div className="relative flex items-center">
               <KeyRound size={18} className="absolute left-3 text-gray-500" />
               <input
