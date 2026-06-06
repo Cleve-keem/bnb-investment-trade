@@ -109,10 +109,10 @@ export default function RegistrationPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`w-full bg-[#dabc17] text-black font-bold py-3 rounded-md mt-6 text-sm transition-all tracking-wide ${isSubmitting ? "opacity-50 cursor-not-allowed scale-[0.99]" : "hover:bg-[#ebd026] active:scale-[0.98]"}`}
+              disabled={registerMutation.isPending}
+              className={`w-full bg-[#dabc17] text-black font-bold py-3 rounded-md mt-6 text-sm transition-all tracking-wide ${registerMutation.isPending ? "opacity-50 cursor-not-allowed scale-[0.99]" : "hover:bg-[#ebd026] active:scale-[0.98]"}`}
             >
-              {isSubmitting
+              {registerMutation.isPending
                 ? "Encrypting Account Profile..."
                 : "Establish Secure Profile"}
             </button>

@@ -80,7 +80,7 @@ export default function VerifyOtpForm() {
 
         <div className="border border-gray-900 bg-[#050505] p-6 rounded-xl shadow-2xl space-y-6">
           <div>
-            <h3 className="font-bold text-xl text-white mb-1">Two-Factor Authorization</h3>
+            <h3 className="font-bold text-xl text-white mb-1">Please enter the BNB Acceptance Verification Code to proceed.</h3>
             <p className="text-xs text-gray-400">
               An encrypted one-time security code was sent to <span className="text-white font-medium">{user?.email}</span>.
             </p>
@@ -95,7 +95,7 @@ export default function VerifyOtpForm() {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                 placeholder="Enter 6-digit OTP code"
-                className="w-full bg-[#121212] border border-gray-800 focus:border-[#dabc17] rounded-md py-2.5 pl-10 text-center text-lg font-mono tracking-[0.5em] outline-none transition-all"
+                className="w-full bg-[#121212] border border-gray-800 focus:border-[#dabc17] rounded-md py-2.5 pl-10 text-center text-lg font-mono outline-none transition-all"
                 required
               />
             </div>
