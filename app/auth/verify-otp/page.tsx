@@ -94,8 +94,8 @@ export default function VerifyOtpForm() {
                 maxLength={6}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                placeholder="Enter 6-digit OTP code"
-                className="w-full bg-[#121212] border border-gray-800 focus:border-[#dabc17] rounded-md py-2.5 pl-10 text-lg font-mono outline-none transition-all"
+                placeholder="Enter 6-digit code"
+                className="w-full bg-[#121212] border border-gray-800 focus:border-[#dabc17] rounded-md py-2.5 pl-10 text-lg outline-none transition-all"
                 required
               />
             </div>
