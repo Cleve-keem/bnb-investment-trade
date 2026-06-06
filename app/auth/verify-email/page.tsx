@@ -1,9 +1,10 @@
-import { useAuthStore } from "@/store/useAuthStore";
+import { useUser } from "@/hooks/useUser";
 import { ArrowRight, ExternalLink, Mail } from "lucide-react";
 import Link from "next/link";
 
 export default function VerifyAccount() {
-  const email = useAuthStore((state) => state.user?.email);
+  const { data: user } = useUser();
+
   return (
     <div className="min-h-screen text-white flex flex-col items-center justify-center p-6 bg-black">
       {/* Upper Content Section */}
@@ -19,7 +20,7 @@ export default function VerifyAccount() {
         <p className="text-zinc-400 max-w-sm mx-auto text-sm leading-relaxed">
           We’ve sent a verification link to <br />
           <span className="text-white font-medium underline decoration-yellow-500/40 underline-offset-4">
-            {email}
+            {user?.email}
           </span>
         </p>
       </div>
