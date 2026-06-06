@@ -1,3 +1,5 @@
+"use client";
+
 import { useUser } from "@/hooks/useUser";
 import { ArrowRight, ExternalLink, Mail } from "lucide-react";
 import Link from "next/link";
