@@ -10,47 +10,52 @@ import AuthService from "@/services/auth";
 import { useForm } from "react-hook-form";
 import { registerSchema, RegisterSchemaInput } from "@/libs/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function RegistrationPage() {
+  const router = useRouter();
+    const queryClient = useQueryClient();
+  
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<RegisterSchemaInput>({
     resolver: zodResolver(registerSchema),
   });
-  const setSession = useAuthStore((state) => state.setSession);
-  const router = useRouter();
 
-  async function onSubmit(data: RegisterSchemaInput) {
-    const loadingToast = toast.loading("Processing validation records...");
-
-    try {
-      const authResult = await AuthService.registerUser(data);
-      if (authResult?.user) {
-        setSession({
-          id: authResult.user.id,
-          email: authResult.user.email || "",
-          username: authResult.user.user_metadata?.username || "",
-          firstName: authResult.user.user_metadata?.first_name || "",
-          middleName: authResult.user.user_metadata?.middle_name || "",
-          lastName: authResult.user.user_metadata?.last_name || "",
-          phoneNumber: authResult.user.user_metadata?.phone_number || "",
-          isEmailVerified: authResult.user.email_confirmed_at ? true : false,
-          isOtpVerified: false,
-        });
+  const registerMutation = useMutation({
+    mutationFn: async (data: RegisterSchemaInput) => {
+       
+      const userData = await AuthService.registerUser(data);
+      if (userData?.user) {
+        router.push("/auth/verify-email");
       }
-      toast.dismiss(loadingToast);
+      return userData;
+    }, onMutate: () => {
+      return toast.loading("Processing validation records...");
+    },
+    onSuccess: async (data, variables, contextToastId) => {
+      if (!data?.user) {
+        toast.dismiss(contextToastId);
+        toast.error("Registration failed. Please try again.");
+        return;
+      }
       toast.success(
         "Security profile initialized! Check your email to verify authorization.",
-      );
-      router.push("/auth/verify-email");
-    } catch (error: any) {
-      toast.dismiss(loadingToast);
-      toast.error(error.message || "Registration failed.");
-    }
-  }
+      ); 
+
+      queryClient.setQueryData(["auth-user"], {
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.user_metadata?.username || "Investor",
+        firstName: data.user.user_metadata?.first_name || "",
+        lastName: data.user.user_metadata?.last_name || "",
+        isVerified: false,
+        isOtpVerified: false,
+      });
+    },
+  });
 
   return (
     <div className="flex justify-center items-center min-h-screen p-4 bg-black text-white antialiased">
@@ -80,7 +85,7 @@ export default function RegistrationPage() {
             Verify your compliance parameters to access active ledgers.
           </p>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-1">
+          <form onSubmit={handleSubmit((data) => {registerMutation.mutate(data)})} className="space-y-1">
             {registrationConstants.map((field) => {
               const fieldError =
                 errors[field.fieldName as keyof RegisterSchemaInput]?.message;
