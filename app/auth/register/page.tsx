@@ -34,30 +34,6 @@ export default function RegistrationPage() {
           "Initialization vectors failed to assign account profiles.",
         );
       }
-
-      // 2. 🚀 Sequential Cascade Chain: Trigger your backend Resend/OTP system route automatically
-      const apiResponse = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userData.user.id,
-          email: userData.user.email,
-          firstName:
-            formData.firstname ||
-            userData.user.user_metadata?.first_name ||
-            "Investor",
-        }),
-      });
-
-      const apiResult = await apiResponse.json();
-
-      if (!apiResponse.ok) {
-        throw new Error(
-          apiResult.details ||
-            "Failed to establish ledger security parameters.",
-        );
-      }
-
       return userData;
     },
     onMutate: () => {
