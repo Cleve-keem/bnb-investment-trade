@@ -87,10 +87,14 @@ export default function RegistrationPage() {
     },
     onError: (error: any, variables, contextToastId) => {
       toast.dismiss(contextToastId);
-      toast.error(
-        error.message ||
-          "Registration sequence failed. Please verify credentials.",
-      );
+      if (error.status === 429) {
+        alert("Too many attempts. Please try again in an hour.");
+      } else {
+        toast.error(
+          error.message ||
+            "Registration sequence failed. Please verify credentials.",
+        );
+      }
     },
   });
 
