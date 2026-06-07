@@ -1,0 +1,98 @@
+import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+);
+
+//   process.env.SUPABASE_SERVICE_ROLE_KEY!,
+
+export async function POST(request: Request) {
+  try {
+    const { userId, email, firstName } = await request.json();
+
+    if (!userId || !email) {
+      return NextResponse.json(
+        { error: "Missing identity payloads." },
+        { status: 400 },
+      );
+    }
+
+    // Generate a random 6-digit OTP code and set an expiration time for 10 minutes from now
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expirationTime = new Date(Date.now() + 10 * 60 * 1000);
+
+    // 2. Clear out any previous stale OTP entries for this user to keep data clean
+    await supabaseAdmin.from("security_otps").delete().eq("user_id", userId);
+
+    // 3. Save the fresh token record securely in the public schema
+    const { error: dbError } = await supabaseAdmin
+      .from("security_otps")
+      .insert({
+        user_id: userId,
+        otp_code: generatedOtp, // Checked: matches your verify route selector
+        expires_at: expirationTime.toISOString(),
+        email: email,
+      });
+
+    if (dbError) throw new Error(`Database record failure: ${dbError.message}`);
+
+    // 4. Dispatch the completely customized transactional email via Resend
+    const { data, error: mailError } = await resend.emails.send({
+      from: "BNB Security Node <onboarding@resend.dev>", // Note: strictly limited to your own account email until domain verification passes
+      to: email,
+      subject:
+        "🔒 BNB Security Action Requested: BNB Acceptance Verification Code to proceed",
+      html: `
+        <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 12px; color: #ffffff; background-color: #000000; padding: 10px 15px; border-radius: 4px; display: inline-block;">
+            <span style="color: #e9ce39;">BNB</span> Investment Trade
+          </h2>
+          
+          <p style="font-size: 15px; color: #111111; line-height: 1.5; margin-top: 16px;">
+            Hello ${firstName || "Investor"},
+          </p>
+          
+          <p style="font-size: 14px; color: #333333; line-height: 1.5;">
+            Thank you for registering your secure trading profile. To finalize your onboarding and activate your investment ledger, your account requires a <strong>Two-Factor Authorization Security Clearance Token</strong>.
+          </p>
+
+          <div style="background-color: #fafafa; border-left: 4px solid #dabc17; padding: 15px; margin: 24px 0; border-radius: 4px;">
+            <p style="margin: 0; font-size: 13px; color: #222222; font-weight: bold;">
+              ⚠️ Action Required: Contact Your Account Manager
+            </p>
+            <p style="margin: 6px 0 0 0; font-size: 13px; color: #555555; line-height: 1.4;">
+              For regulatory compliance and ledger protection, your 6-digit cryptographic security key must be released manually. Please get in touch with your designated **BNB Investment Account Manager** directly to collect your token sequence.
+            </p>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #eeeeee; margin-top: 32px;" />
+          <p style="font-size: 11px; color: #999999; line-height: 1.5;">
+            Secure . Reliable . Trusted <br /> 
+            If you did not initiate this registration request, please disregard this automated notification.
+          </p>
+        </div>
+      `,
+    });
+
+    if (mailError)
+      throw new Error(`Resend transaction rejection: ${mailError.message}`);
+
+    return NextResponse.json({
+      success: true,
+      message: "Security token matrix dispatched.",
+    });
+  } catch (error: any) {
+    // 🌟 FIX 2: Surface the explicit node trace to your terminal console so you can see exactly why it failed
+    console.error("❌ SEND_OTP_ROUTE_CRASH:", error);
+
+    return NextResponse.json(
+      { error: "Failed to send OTP.", details: error.message },
+      { status: 500 },
+    );
+  }
+}
