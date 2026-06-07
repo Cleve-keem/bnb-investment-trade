@@ -83,7 +83,7 @@ export default function RegistrationPage() {
       });
 
       // 4. Redirect cleanly directly to your OTP entry screen
-      router.push("/auth/verify-otp");
+      router.push("/auth/verify-email");
     },
     onError: (error: any, variables, contextToastId) => {
       toast.dismiss(contextToastId);
