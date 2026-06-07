@@ -9,19 +9,42 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, UserPlus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
 
-const { register, handleSubmit, formState: { errors } } = useForm<LoginSchemaInput>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginSchemaInput>({
     resolver: zodResolver(loginSchema),
   });
 
- const loginMutation = useMutation({
+  useEffect(() => {
+    const verified = searchParams.get("verified");
+    const error = searchParams.get("error");
+
+    if (verified === "true") {
+      toast.success(
+        "Security authorization confirmed! Access ledger unlocked. Please sign in.",
+      );
+    }
+
+    if (error) {
+      if (error === "token_expired")
+        toast.error("Verification parameters expired. Please re-register.");
+      else toast.error("Invalid verification trace context mapping.");
+    }
+  }, [searchParams]);
+
+  const loginMutation = useMutation({
     mutationFn: async (credentials: LoginSchemaInput) => {
       const authResult = await AuthService.loginUser(credentials);
       if (!authResult?.user) throw new Error("Authentication node rejection.");
@@ -56,7 +79,7 @@ const { register, handleSubmit, formState: { errors } } = useForm<LoginSchemaInp
             firstName: data.user.user_metadata?.first_name || "",
           }),
         });
-        
+
         router.push("/auth/verify-otp");
       } catch (err) {
         toast.error("Failed to seed transaction OTP. Contact network manager.");
@@ -66,7 +89,7 @@ const { register, handleSubmit, formState: { errors } } = useForm<LoginSchemaInp
       toast.dismiss(contextToastId);
       toast.error(error.message || "Invalid login credentials.");
     },
-  })
+  });
 
   return (
     <div className="flex justify-center items-center min-h-screen p-3 bg-black text-white">
@@ -85,7 +108,10 @@ const { register, handleSubmit, formState: { errors } } = useForm<LoginSchemaInp
           <p className="text-[12px] mb-5 text-gray-400">
             Please login to your account
           </p>
-          <form onSubmit={handleSubmit((values) => loginMutation.mutate(values))} className="flex flex-col">
+          <form
+            onSubmit={handleSubmit((values) => loginMutation.mutate(values))}
+            className="flex flex-col"
+          >
             {loginConstants.map((field) => {
               const fieldError =
                 errors[field.fieldName as keyof LoginSchemaInput]?.message;

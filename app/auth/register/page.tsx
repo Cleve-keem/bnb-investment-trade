@@ -58,8 +58,21 @@ export default function RegistrationPage() {
         isOtpVerified: false,
       });
 
-      // 4. Redirect cleanly directly to your OTP entry screen
-      router.push("/auth/verify-email");
+      try {
+        await fetch("/api/auth/send-email-verification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: data.user?.id,
+            email: data.user?.email,
+            firstName: data.user?.user_metadata?.first_name || "",
+          }),
+        });
+
+        router.push("/auth/verify-email");
+      } catch (err) {
+        toast.error("Failed to seed transaction OTP. Contact network manager.");
+      }
     },
     onError: (error: any, variables, contextToastId) => {
       toast.dismiss(contextToastId);
