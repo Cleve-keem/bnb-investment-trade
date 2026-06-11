@@ -20,7 +20,6 @@ import { loginSchema, LoginSchemaInput } from "@/libs/validations/auth";
 import AuthService from "@/services/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// TYPE DEFINITIONS FOR CLEAN TRANSITION PASSING
 interface LoginFormContentProps {
   register: UseFormRegister<LoginSchemaInput>;
   errors: FieldErrors<LoginSchemaInput>;
@@ -188,14 +187,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Central Core Form Interface Surface */}
         <div className="border border-[#e9cf393a] bg-[#050505] p-6 rounded-md shadow-2xl">
           <h3 className="font-semibold text-2xl mb-1">Welcome Back</h3>
           <p className="text-[12px] mb-5 text-gray-400">
             Please login to your account
           </p>
 
-          {/* Form Content Mount Point passing values safely down through parameters */}
           <LoginFormContent
             register={register}
             errors={errors}
