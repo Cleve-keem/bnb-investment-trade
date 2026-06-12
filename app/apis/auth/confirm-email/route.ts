@@ -1,10 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import supabase from "@/utils/supabase/supabaseClient";
 import { NextResponse } from "next/server";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-);
 
 export async function GET(request: Request) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -17,8 +12,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${baseUrl}/auth/login?error=invalid_token`);
     }
 
-    // 1. Look up verification token record inside database
-    const { data: record, error: findError } = await supabaseAdmin
+    const { data: record, error: findError } = await supabase
       .from("email_verifications")
       .select("*")
       .eq("token", token)
@@ -30,29 +24,27 @@ export async function GET(request: Request) {
       );
     }
 
-    // 2. Validate expiration timestamp constraints
     const now = new Date();
     const expiresAt = new Date(record.expires_at);
     if (now > expiresAt) {
-      await supabaseAdmin
-        .from("email_verifications")
-        .delete()
-        .eq("id", record.id);
+      await supabase.from("email_verifications").delete().eq("id", record.id);
       return NextResponse.redirect(`${baseUrl}/auth/login?error=token_expired`);
     }
 
     // 3. Update User configuration parameters inside Supabase Auth management layers directly!
     // We update user_metadata so Supabase is natively aware of their verification check step.
-    const { error: authUpdateError } =
-      await supabaseAdmin.auth.admin.updateUserById(record.user_id, {
+    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
+      record.user_id,
+      {
         user_metadata: { isVerified: true },
         email_confirm: true, // Force system-level verification status true sync
-      });
+      },
+    );
 
     if (authUpdateError) throw authUpdateError;
 
     // 4. Delete the used link record tokens cleanly
-    await supabaseAdmin
+    await supabase
       .from("email_verifications")
       .delete()
       .eq("user_id", record.user_id);

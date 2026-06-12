@@ -1,13 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import crypto from "crypto";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-);
+import supabase from "@/utils/supabase/supabaseClient";
+import { resendService } from "@/constants";
 
 export async function POST(request: Request) {
   try {
@@ -20,18 +14,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Generate a long secure email verification token string
     const verificationToken = crypto.randomBytes(32).toString("hex");
-    const tokenExpiration = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24-hour validity window
+    const tokenExpiration = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // 2. Clear out any previous registration tokens for this user
-    await supabaseAdmin
-      .from("email_verifications")
-      .delete()
-      .eq("user_id", userId);
+    await supabase.from("email_verifications").delete().eq("user_id", userId);
 
-    // 3. Save the token parameters to the database
-    const { error: dbError } = await supabaseAdmin
+    const { error: dbError } = await supabase
       .from("email_verifications")
       .insert({
         user_id: userId,
@@ -42,12 +30,10 @@ export async function POST(request: Request) {
     if (dbError)
       throw new Error(`Database token write error: ${dbError.message}`);
 
-    // 4. Construct your site's deployment URL dynamically
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const absoluteConfirmationUrl = `${baseUrl}/api/auth/confirm-email?token=${verificationToken}`;
 
-    // 5. Send consistent branding email dispatch via Resend
-    const { error: mailError } = await resend.emails.send({
+    const { error: mailError } = await resendService.emails.send({
       from: "BNB Security Node <onboarding@resend.dev>",
       to: email,
       subject: "🔒 Finalize Onboarding: Confirm Your BNB Security Profile",

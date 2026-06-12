@@ -1,15 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
+import { resendService } from "@/constants";
+import supabase from "@/utils/supabase/supabaseClient";
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-);
-
-//   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 
 export async function POST(request: Request) {
   try {
@@ -27,22 +18,20 @@ export async function POST(request: Request) {
     const expirationTime = new Date(Date.now() + 10 * 60 * 1000);
 
     // 2. Clear out any previous stale OTP entries for this user to keep data clean
-    await supabaseAdmin.from("security_otps").delete().eq("user_id", userId);
+    await supabase.from("security_otps").delete().eq("user_id", userId);
 
     // 3. Save the fresh token record securely in the public schema
-    const { error: dbError } = await supabaseAdmin
-      .from("security_otps")
-      .insert({
-        user_id: userId,
-        otp_code: generatedOtp, // Checked: matches your verify route selector
-        expires_at: expirationTime.toISOString(),
-        email: email,
-      });
+    const { error: dbError } = await supabase.from("security_otps").insert({
+      user_id: userId,
+      otp_code: generatedOtp, // Checked: matches your verify route selector
+      expires_at: expirationTime.toISOString(),
+      email: email,
+    });
 
     if (dbError) throw new Error(`Database record failure: ${dbError.message}`);
 
     // 4. Dispatch the completely customized transactional email via Resend
-    const { data, error: mailError } = await resend.emails.send({
+    const { data, error: mailError } = await resendService.emails.send({
       from: "BNB Security Node <onboarding@resend.dev>", // Note: strictly limited to your own account email until domain verification passes
       to: email,
       subject:

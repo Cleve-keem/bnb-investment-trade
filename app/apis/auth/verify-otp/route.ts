@@ -1,10 +1,5 @@
+import supabase from "@/utils/supabase/supabaseClient";
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-);
 
 export async function POST(request: Request) {
   try {
@@ -17,8 +12,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Look up the matching token record in the database
-    const { data: records, error: dbError } = await supabaseAdmin
+    const { data: records, error: dbError } = await supabase
       .from("security_otps")
       .select("*")
       .eq("user_id", userId)
@@ -49,8 +43,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Clean up the database by deleting the used code token
-    await supabaseAdmin.from("security_otps").delete().eq("user_id", userId);
+    await supabase.from("security_otps").delete().eq("user_id", userId);
 
     return NextResponse.json({
       success: true,
