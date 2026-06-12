@@ -1,21 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import Logo from "@/components/Logo";
 import FormField from "@/components/forms/FormField";
 import { registrationConstants } from "@/constants/auth";
-import AuthService from "@/services/auth";
 import { useForm } from "react-hook-form";
 import { registerSchema, RegisterSchemaInput } from "@/libs/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRegisterMutation } from "@/hooks/auth";
 
 export default function RegistrationPage() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
   const {
     register,
     handleSubmit,
@@ -23,69 +17,7 @@ export default function RegistrationPage() {
   } = useForm<RegisterSchemaInput>({
     resolver: zodResolver(registerSchema),
   });
-
-  const registerMutation = useMutation({
-    mutationFn: async (formData: RegisterSchemaInput) => {
-      // 1. Core user registration with Supabase Auth
-      const userData = await AuthService.registerUser(formData);
-
-      if (!userData?.user) {
-        throw new Error(
-          "Initialization vectors failed to assign account profiles.",
-        );
-      }
-      return userData;
-    },
-    onMutate: () => {
-      return toast.loading("Processing validation records...");
-    },
-    onSuccess: async (data, variables, contextToastId) => {
-      toast.dismiss(contextToastId);
-      toast.success(
-        "Security profile initialized! Please request your access token from your manager.",
-      );
-
-      // 3. Populate TanStack Query cache values immediately so your input page can read user info
-      queryClient.setQueryData(["auth-user"], {
-        id: data.user?.id,
-        email: data.user?.email,
-        username: data.user?.user_metadata?.username || "Investor",
-        firstName:
-          data.user?.user_metadata?.first_name || variables.firstname || "",
-        lastName:
-          data.user?.user_metadata?.last_name || variables.lastname || "",
-        isVerified: false,
-        isOtpVerified: false,
-      });
-
-      try {
-        await fetch("/api/auth/send-email-verification", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: data.user?.id,
-            email: data.user?.email,
-            firstName: data.user?.user_metadata?.first_name || "",
-          }),
-        });
-
-        router.push("/auth/verify-email");
-      } catch (err) {
-        toast.error("Failed to seed transaction OTP. Contact network manager.");
-      }
-    },
-    onError: (error: any, variables, contextToastId) => {
-      toast.dismiss(contextToastId);
-      if (error.status === 429) {
-        alert("Too many attempts. Please try again in an hour.");
-      } else {
-        toast.error(
-          error.message ||
-            "Registration sequence failed. Please verify credentials.",
-        );
-      }
-    },
-  });
+  const { mutate, isPending } = useRegisterMutation();
 
   return (
     <div className="flex justify-center items-center min-h-screen p-4 bg-black text-white antialiased">
@@ -117,7 +49,7 @@ export default function RegistrationPage() {
 
           <form
             onSubmit={handleSubmit((data) => {
-              registerMutation.mutate(data);
+              mutate(data);
             })}
             className="space-y-1"
           >
@@ -144,10 +76,10 @@ export default function RegistrationPage() {
 
             <button
               type="submit"
-              disabled={registerMutation.isPending}
-              className={`w-full bg-[#dabc17] text-black font-bold py-3 rounded-md mt-6 text-sm transition-all tracking-wide ${registerMutation.isPending ? "opacity-50 cursor-not-allowed scale-[0.99]" : "hover:bg-[#ebd026] active:scale-[0.98]"}`}
+              disabled={isPending}
+              className={`w-full bg-[#dabc17] text-black font-bold py-3 rounded-md mt-6 text-sm transition-all tracking-wide ${isPending ? "opacity-50 cursor-not-allowed scale-[0.99]" : "hover:bg-[#ebd026] active:scale-[0.98]"}`}
             >
-              {registerMutation.isPending
+              {isPending
                 ? "Encrypting Account Profile..."
                 : "Establish Secure Profile"}
             </button>
