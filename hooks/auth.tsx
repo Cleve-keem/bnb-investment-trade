@@ -83,7 +83,6 @@ export function useRegisterMutation() {
         "Security profile initialized! Please request your access token from your manager.",
       );
 
-      // 3. Populate TanStack Query cache values immediately so your input page can read user info
       queryClient.setQueryData(["auth-user"], {
         id: data.user?.id,
         email: data.user?.email,

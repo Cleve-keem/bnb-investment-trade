@@ -41,7 +41,7 @@ export default function VerifyAccount() {
         </a>
 
         {/* Secondary Navigation Link */}
-        <Link href="/auth/signin" className="block">
+        <Link href="/auth/register" className="block">
           <button className="flex w-full h-12 rounded-xl text-zinc-400 hover:text-white items-center justify-center gap-2 transition-colors text-sm font-medium">
             I've verified my account
             <ArrowRight className="size-4" />

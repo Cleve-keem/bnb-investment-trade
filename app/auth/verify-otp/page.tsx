@@ -34,8 +34,7 @@ export default function VerifyOtpForm() {
     const loadingToast = toast.loading("Validating OTP authentication node...");
 
     try {      
-      // 🚀 FIX 2: Swap the fake verification check for your real backend verification route API call
-      const response = await fetch("/api/auth/verify-otp", {
+      const response = await fetch("/api/v1/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -50,7 +49,6 @@ export default function VerifyOtpForm() {
         throw new Error(result.error || "Mismatched validation credentials.");
       }
 
-      // 3. Directly patch the current auth-user cache state values to unlock route gates
       queryClient.setQueryData(["auth-user"], (oldData: any) => {
         if (!oldData) return null;
         return {
@@ -61,7 +59,7 @@ export default function VerifyOtpForm() {
 
       toast.dismiss(loadingToast);
       toast.success("Identity authorization verified. Ledger access granted.");
-      router.push("/dashboard"); // Redirect to home dashboard
+      router.push("/dashboard"); 
       
     } catch (error: any) {
       toast.dismiss(loadingToast);
