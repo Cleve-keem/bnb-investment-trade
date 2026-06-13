@@ -54,4 +54,35 @@ export default class AuthService {
       );
     }
   }
+
+  static async forgotPassword(email: string) {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      throw new Error(
+        error.message || "Failed to initialize password recovery.",
+      );
+    }
+  }
+
+  static async resetPassword(password: string) {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: password,
+      });
+
+      if (error) throw error;
+
+      return data;
+    } catch (error: any) {
+      throw new Error(
+        error.message ||
+          "An unexpected error occurred while resetting password.",
+      );
+    }
+  }
 }

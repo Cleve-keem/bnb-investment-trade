@@ -3,6 +3,10 @@ import AuthService from "@/services/auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useUser } from "./useUser";
+import { useState } from "react";
+import supabase from "@/utils/supabase/supabaseClient";
+import UserService from "@/services/user";
 
 export function useLoginMutation() {
   const queryClient = useQueryClient();
@@ -125,4 +129,55 @@ export function useRegisterMutation() {
   });
 
   return { mutate, isPending };
+}
+
+export function useForgotPasswordMutation(onSuccessCallback?: () => void) {
+  const [emailSent, setEmailSent] = useState<boolean>(false);
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: async (email: string) => {
+      await AuthService.forgotPassword(email);
+      const { profileError, userProfile } =
+        await UserService.getUserIdAndFirstName(email);
+
+      if (profileError || !userProfile) {
+        throw new Error("No active identity node matches this address.");
+      }
+
+      const response = await fetch(`/api/v1/auth/send-password-reset-link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userProfile.id,
+          firstname: userProfile.first_name || "Investor",
+          email: email,
+        }),
+      });
+
+      if (!response.ok)
+        throw new Error("Failed to transmit custom recovery parameters.");
+
+      return response.json();
+    },
+    onMutate: () => {
+      return toast.loading("Processing validation records...");
+    },
+    onSuccess: (data, variables, contextToastId) => {
+      toast.dismiss(contextToastId);
+      toast.success(
+        "A custom reset link has been dispatched to your email address.",
+      );
+      setEmailSent(true);
+
+      if (onSuccessCallback) onSuccessCallback();
+    },
+    onError: (error: any, variables, contextToastId) => {
+      toast.dismiss(contextToastId);
+      toast.error(
+        error.message || "Failed to process recovery initialization.",
+      );
+    },
+  });
+
+  return { mutate, isPending, emailSent };
 }

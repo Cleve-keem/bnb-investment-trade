@@ -2,11 +2,10 @@
 
 import { Eye, EyeOff, LucideIcon } from "lucide-react";
 import React from "react";
-import { required } from "zod/v4-mini";
 
 interface FieldProps {
   field: {
-    id: number;
+    id: number | string;
     name: string;
     fieldName: string;
     type: string;

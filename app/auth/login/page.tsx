@@ -67,12 +67,25 @@ function LoginFormContent({
         const fieldError =
           errors[field.fieldName as keyof LoginSchemaInput]?.message;
         return (
-          <FormField
-            key={field.id}
-            field={field}
-            register={register}
-            error={fieldError}
-          />
+          <div key={field.id}>
+            {field.fieldName === "password" ? (
+              <>
+                <FormField
+                  field={field}
+                  register={register}
+                  error={fieldError}
+                />
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs text-[#dabc17]"
+                >
+                  Forgot password?
+                </Link>
+              </>
+            ) : (
+              <FormField field={field} register={register} error={fieldError} />
+            )}
+          </div>
         );
       })}
 

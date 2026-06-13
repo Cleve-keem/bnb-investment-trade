@@ -27,7 +27,7 @@ export const registerSchema = baseAuthSchema
     firstname: z.string().min(3, "First name is required"),
     lastname: z.string().min(3, "Last name is required"),
     middlename: z.string().optional(),
-    email: z.string().email("Please enter a valid institutional email address"),
+    email: z.string().email("Please enter a valid email address"),
     phoneNumber: z
       .string()
       .min(10, "Phone number must be at least 10 digits")
@@ -51,5 +51,10 @@ export const registerSchema = baseAuthSchema
 
 export const loginSchema = baseAuthSchema.extend({});
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
 export type RegisterSchemaInput = z.infer<typeof registerSchema>;
 export type LoginSchemaInput = z.infer<typeof loginSchema>;
+export type ForgotPasswordSchemaInput = z.infer<typeof forgotPasswordSchema>;
