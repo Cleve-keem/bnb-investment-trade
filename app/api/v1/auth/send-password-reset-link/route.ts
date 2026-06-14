@@ -2,15 +2,26 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import supabase from "@/utils/supabase/supabaseClient";
 import { resendService } from "@/constants";
+import UserService from "@/services/user";
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
 
-    if (!!email) {
+    if (!email) {
       return NextResponse.json(
         { error: "Missing identity payloads." },
         { status: 400 },
+      );
+    }
+
+    const { profileError, userProfile } =
+      await UserService.getUserByEmail(email);
+
+    if (profileError || !userProfile) {
+      return NextResponse.json(
+        { error: "No active profile matches this email address." },
+        { status: 404 },
       );
     }
 
@@ -21,14 +32,16 @@ export async function POST(req: Request) {
 
     const { error: dbError } = await supabase
       .from("email_verifications")
-      .update({
+      .insert({
+        user_id: userProfile.id,
+        email: email,
         token: verificationToken,
         expires_at: tokenExpiration.toISOString(),
-      })
-      .eq("email", email);
+      });
 
-    if (dbError)
+    if (dbError) {
       throw new Error(`Database token write error: ${dbError.message}`);
+    }
 
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
     const resetLink = `${baseUrl}/auth/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(verificationToken)}`;
@@ -38,12 +51,17 @@ export async function POST(req: Request) {
       to: email,
       subject: "Password Reset Request",
       html: `
-        <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 12px; color: #ffffff; background-color: #000000; padding: 10px 15px; border-radius: 4px; display: inline-block;">
-            <span style="color: #e9ce39;">BNB</span> Investment Trade
-        </h2>
-        <p>You have requested a password reset. Please click the link below to reset your password:</p>
-        <a href="${resetLink}" target="_blank">Reset Password</a>
-        <p>If you did not request this, please ignore this email.</p>
+        <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 12px; color: #ffffff; background-color: #000000; padding: 10px 15px; border-radius: 4px; display: inline-block;">
+              <span style="color: #e9ce39;">BNB</span> Investment Trade
+          </h2>
+          <p>Hello ${userProfile.first_name || "Investor"},</p>
+          <p>You have requested a password reset. Please click the link below to change your security credentials:</p>
+          <p style="margin: 24px 0;">
+            <a href="${resetLink}" target="_blank" style="background-color: #e9ce39; color: #000; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; display: inline-block;">Reset Password</a>
+          </p>
+          <p style="font-size: 11px; color: #666;">If you did not request this, you can safely ignore this email.</p>
+        </div>
       `,
     });
 
@@ -51,12 +69,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Email sent successfully.",
+      message: "Email dispatched successfully via Resend infrastructure.",
     });
   } catch (error: any) {
     console.error("Error sending password reset link:", error);
     return NextResponse.json(
-      { error: "Failed to send password reset link." },
+      { error: error.message || "Failed to send password reset link." },
       { status: 500 },
     );
   }

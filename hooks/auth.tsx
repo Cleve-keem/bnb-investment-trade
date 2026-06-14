@@ -136,28 +136,21 @@ export function useForgotPasswordMutation(onSuccessCallback?: () => void) {
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (email: string) => {
-      await AuthService.forgotPassword(email);
-      const { profileError, userProfile } =
-        await UserService.getUserIdAndFirstName(email);
-
-      if (profileError || !userProfile) {
-        throw new Error("No active identity node matches this address.");
-      }
-
       const response = await fetch(`/api/v1/auth/send-password-reset-link`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userProfile.id,
-          firstname: userProfile.first_name || "Investor",
-          email: email,
-        }),
+        body: JSON.stringify({ email }),
       });
 
-      if (!response.ok)
-        throw new Error("Failed to transmit custom recovery parameters.");
+      const result = await response.json();
 
-      return response.json();
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Failed to transmit custom recovery parameters.",
+        );
+      }
+
+      return result;
     },
     onMutate: () => {
       return toast.loading("Processing validation records...");
