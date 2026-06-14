@@ -3,10 +3,7 @@ import AuthService from "@/services/auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useUser } from "./useUser";
 import { useState } from "react";
-import supabase from "@/utils/supabase/supabaseClient";
-import UserService from "@/services/user";
 
 export function useLoginMutation() {
   const queryClient = useQueryClient();
