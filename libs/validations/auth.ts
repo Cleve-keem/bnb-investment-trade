@@ -49,6 +49,20 @@ export const registerSchema = baseAuthSchema
     path: ["confirmPassword"],
   });
 
+export const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, "Security parameters mandate a minimum of 8 characters.")
+      .regex(/[A-Z]/, "Must contain at least one uppercase letter.")
+      .regex(/[0-9]/, "Must contain at least one numerical digit."),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Cryptographic credentials do not match.",
+    path: ["confirmPassword"],
+  });
+
 export const loginSchema = baseAuthSchema.extend({});
 
 export const forgotPasswordSchema = z.object({
@@ -58,3 +72,4 @@ export const forgotPasswordSchema = z.object({
 export type RegisterSchemaInput = z.infer<typeof registerSchema>;
 export type LoginSchemaInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordSchemaInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

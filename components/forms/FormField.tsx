@@ -10,6 +10,8 @@ interface FieldProps {
     fieldName: string;
     type: string;
     icon: LucideIcon | null;
+    placeholder?: string;
+    // label?: string;
   };
   register?: any;
   error?: string;
@@ -75,8 +77,11 @@ export default function FormField({ field, register, error }: FieldProps) {
           // name={field.fieldName}
           {...register(`${field.fieldName}`)}
           className={`w-full bg-[#121212] border ${error ? "border-red-500" : "border-gray-800 focus:border-[#dabc17]"} rounded-md py-2.5 pr-10 text-sm outline-none transition-all ${field.icon ? "pl-10" : "px-3"}`}
-          placeholder={`Enter your ${field.name.toLowerCase()}`}
-          // onChange={onChange}
+          placeholder={
+            field.placeholder
+              ? field.placeholder
+              : `Enter your ${field.name.toLowerCase()}`
+          }
         />
 
         {isPasswordType && (
