@@ -1,49 +1,85 @@
-import supabase from "@/utils/supabase/supabaseClient";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { userId, code } = await request.json();
+    const cookieStore = await cookies();
 
-    if (!userId || !code) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            );
+          },
+        },
+      },
+    );
+
+    // 1. Get authenticated user from session cookie
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Unauthorized session context. Please log in again." },
+        { status: 401 },
+      );
+    }
+
+    const { code } = await request.json();
+
+    if (!code) {
       return NextResponse.json(
         { error: "Incomplete parameter sequence." },
         { status: 400 },
       );
     }
 
+    // 2. Query security OTP record
     const { data: records, error: dbError } = await supabase
       .from("security_otps")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .eq("otp_code", code)
       .single();
 
     if (dbError || !records) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid security token code. Access denied.",
-        },
+        { success: false, error: "Invalid security token code." },
         { status: 401 },
       );
     }
 
-    // 2. Check if the code token has expired
-    const now = new Date();
-    const expiresAt = new Date(records.expires_at);
-
-    if (now > expiresAt) {
+    // 3. Check expiration
+    if (new Date() > new Date(records.expires_at)) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Security token has expired. Request fresh transmission.",
-        },
+        { success: false, error: "Security token has expired." },
         { status: 410 },
       );
     }
 
-    await supabase.from("security_otps").delete().eq("user_id", userId);
+    // 4. Delete consumed OTP
+    await supabase.from("security_otps").delete().eq("user_id", user.id);
+
+    // 5. Update public.users table flag (FIXED TARGET TABLE)
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ is_otp_verified: true })
+      .eq("id", user.id);
+
+    if (updateError) {
+      throw updateError;
+    }
 
     return NextResponse.json({
       success: true,

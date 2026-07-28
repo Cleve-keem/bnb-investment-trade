@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Shield, TrendingUp, BarChart3, ArrowRight } from "lucide-react";
-import supabase from "@/utils/supabase/supabaseClient";
+import supabase from "@/libs/supabase/browser";
 
 export default function Home() {
   const router = useRouter();

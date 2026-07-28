@@ -63,7 +63,7 @@ export default function DashboardPortal() {
         <div className="space-y-7">
           {/* Brand Logo Alignment */}
           <div className="flex items-center gap-3 h-10 px-2">
-            <div className="relative w-6 h-6 flex-shrink-0 transition-transform duration-300 hover:rotate-12">
+            <div className="relative w-6 h-6 shrink-0 transition-transform duration-300 hover:rotate-12">
               <Image
                 src="/logo2.png"
                 alt="BNB Logo"

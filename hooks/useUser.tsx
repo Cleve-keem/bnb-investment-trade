@@ -1,17 +1,30 @@
 "use client";
 
+import supabase from "@/libs/supabase/browser";
 import { useQuery } from "@tanstack/react-query";
-import supabase from "@/utils/supabase/supabaseClient";
 
 export function useUser() {
   return useQuery({
     queryKey: ["auth-user"],
     queryFn: async () => {
-      // Fetch the current active token session directly from Supabase core
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
       if (error || !session?.user) return null;
 
-      // Map the user profile meta properties cleanly
+      console.log(session);
+
+      const { data: profile, error: profileError } = await supabase
+        .from("users")
+        .select("user_role, is_suspended")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profileError) {
+        throw new Error("Failed to load user profile.");
+      }
+
       return {
         id: session.user.id,
         email: session.user.email,
@@ -19,11 +32,13 @@ export function useUser() {
         firstName: session.user.user_metadata?.first_name || "",
         lastName: session.user.user_metadata?.last_name || "",
         phoneNumber: session.user.user_metadata?.phone_number || "",
-        isEmailVerified: !!session.user.email_confirmed_at,
-        isOtpVerified: false,
+        is_email_verified: !!session.user.email_confirmed_at,
+        is_otp_verified: false,
+        user_role: profile.user_role,
+        is_suspended: profile.is_suspended,
       };
     },
-    staleTime: Infinity, // Keep this token mapped globally to prevent excessive network spam
+    staleTime: Infinity,
     gcTime: 1000 * 60 * 60,
   });
 }

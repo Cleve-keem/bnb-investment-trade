@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import supabase from "@/utils/supabase/supabaseClient";
 import { resendService } from "@/constants";
+import supabase from "@/libs/supabase/browser";
 
 export async function POST(request: Request) {
   try {

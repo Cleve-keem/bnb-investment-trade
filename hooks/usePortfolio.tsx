@@ -1,15 +1,14 @@
-import supabase from "@/utils/supabase/supabaseClient";
+import supabase from "@/libs/supabase/browser";
 import { useQuery } from "@tanstack/react-query";
 
 export function usePortfolio() {
   const { data: portfolio, isLoading: loadingPortfolio } = useQuery({
     queryKey: ["portfolio-metrics"],
     queryFn: async () => {
-      // 🚀 Remove .single() to prevent application/vnd.pgrst header 406 bails
       const { data, error } = await supabase
         .from("portfolios")
         .select("*")
-        .limit(1); // Safely isolate to just one row matching the user session
+        .limit(1);
 
       if (error) {
         console.error(
@@ -19,7 +18,6 @@ export function usePortfolio() {
         throw error;
       }
 
-      // Safe fallback extraction directly within client runtime
       const activeProfileRecord = data?.[0];
 
       return (
@@ -30,7 +28,7 @@ export function usePortfolio() {
         }
       );
     },
-    refetchInterval: 10000, // Background background polling loop state mapping
+    refetchInterval: 10000,
   });
 
   return { portfolio, loadingPortfolio };

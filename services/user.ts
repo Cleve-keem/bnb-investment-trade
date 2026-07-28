@@ -1,4 +1,4 @@
-import supabase from "@/utils/supabase/supabaseClient";
+import supabase from "@/libs/supabase/browser";
 
 export default class UserService {
   static async getUserByEmail(email: string) {
@@ -9,5 +9,16 @@ export default class UserService {
       .maybeSingle();
 
     return { userProfile, profileError };
+  }
+
+  static async getUserProfile(userId: string) {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 }

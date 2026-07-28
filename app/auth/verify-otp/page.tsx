@@ -9,10 +9,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/hooks/useUser";
 
 export default function VerifyOtpForm() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [otp, setOtp] = useState("");
+  const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data: user } = useUser();
 
@@ -24,22 +24,15 @@ export default function VerifyOtpForm() {
       return;
     }
 
-    if (!user?.id) {
-      toast.error("No active session context found. Please log in again.");
-      router.push("/auth/login");
-      return;
-    }
-
     setIsVerifying(true);
     const loadingToast = toast.loading("Validating OTP authentication node...");
 
-    try {      
+    try {
       const response = await fetch("/api/v1/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          userId: user.id, 
-          code: otp 
+        body: JSON.stringify({
+          code: otp,
         }),
       });
 
@@ -53,14 +46,13 @@ export default function VerifyOtpForm() {
         if (!oldData) return null;
         return {
           ...oldData,
-          isOtpVerified: true,
+          is_otp_verified: true,
         };
       });
 
       toast.dismiss(loadingToast);
       toast.success("Identity authorization verified. Ledger access granted.");
-      router.push("/dashboard"); 
-      
+      router.push("/dashboard");
     } catch (error: any) {
       toast.dismiss(loadingToast);
       toast.error(error.message || "OTP verification failed.");
@@ -73,14 +65,19 @@ export default function VerifyOtpForm() {
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center gap-2 mb-8">
           <Logo />
-          <h2 className="text-xl font-semibold"><span className="text-[#e9ce39]">BNB</span> Security Node</h2>
+          <h2 className="text-xl font-semibold">
+            <span className="text-[#e9ce39]">BNB</span> Security Node
+          </h2>
         </div>
 
         <div className="border border-gray-900 bg-[#050505] p-6 rounded-xl shadow-2xl space-y-6">
           <div>
-            <h3 className="font-bold text-xl text-white mb-1">Please enter the BNB Acceptance Verification Code to proceed.</h3>
+            <h3 className="font-bold text-xl text-white mb-1">
+              Please enter the BNB Acceptance Verification Code to proceed.
+            </h3>
             <p className="text-xs text-gray-400">
-              An encrypted one-time security code was sent to <span className="text-white font-medium">{user?.email}</span>.
+              An encrypted one-time security code was sent to{" "}
+              <span className="text-white font-medium">{user?.email}</span>.
             </p>
           </div>
 
@@ -107,13 +104,14 @@ export default function VerifyOtpForm() {
             </button>
           </form>
 
-          {/* Account Manager Institutional Banner */}
           <div className="border border-[#e9cf391f] bg-[#e9cf3905] p-4 rounded-lg space-y-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-[#e9ce39]">
               <MessageSquare size={14} /> Contact Account Manager
             </div>
             <p className="text-[11px] text-gray-400 leading-relaxed">
-              If you experience network delivery delays or need immediate manual ledger clearance, please connect with your designated **BNB Investment Account Manager** directly for dynamic verification.
+              If you experience network delivery delays or need immediate manual
+              ledger clearance, please connect with your designated **BNB
+              Investment Account Manager** directly for dynamic verification.
             </p>
           </div>
         </div>

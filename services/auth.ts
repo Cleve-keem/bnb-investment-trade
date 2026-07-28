@@ -1,6 +1,6 @@
+import supabase from "@/libs/supabase/browser";
 import { LoginSchemaInput } from "@/libs/validations/auth";
 import { RegistrationFormType } from "@/types/auth";
-import supabase from "@/utils/supabase/supabaseClient";
 
 export default class AuthService {
   static async registerUser(credentials: RegistrationFormType) {
@@ -19,6 +19,7 @@ export default class AuthService {
             last_name: credentials.lastname.trim(),
             middle_name: credentials?.middlename?.trim(),
             phone_number: credentials.phoneNumber.trim(),
+            user_role: "investor",
           },
         },
       });
@@ -42,12 +43,34 @@ export default class AuthService {
 
   static async loginUser(credential: LoginSchemaInput) {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: credential.email,
-        password: credential.password,
-      });
-      if (error) throw error;
-      return data;
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: credential.email,
+          password: credential.password,
+        });
+
+      if (authError || !authData.user) throw authError;
+      
+      const { data: profile, error: profileError } = await supabase
+        .from("users")
+        .select("id, email, first_name, last_name, user_role, is_suspended")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (profileError) {
+        throw new Error("Failed to load associated user profile.");
+      }
+
+      if (profile.is_suspended) {
+        await supabase.auth.signOut();
+        throw new Error("This account node has been isolated.");
+      }
+
+      return {
+        user: authData.user,
+        session: authData.session,
+        profile,
+      };
     } catch (error: any) {
       throw new Error(
         error.message || "An unexpected error occurred Loggin in.",

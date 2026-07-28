@@ -1,58 +1,31 @@
-import { LoginSchemaInput, RegisterSchemaInput } from "@/libs/validations/auth";
-import AuthService from "@/services/auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useState } from "react";
+import { AuthApi } from "@/libs/api/auth.api";
 
 export function useLoginMutation() {
-  const queryClient = useQueryClient();
   const router = useRouter();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async (credentials: LoginSchemaInput) => {
-      const authResult = await AuthService.loginUser(credentials);
-      if (!authResult?.user) throw new Error("Authentication node rejection.");
-      return authResult;
-    },
+    mutationFn: AuthApi.login,
 
     onMutate: () => {
-      return toast.loading("Verifying transaction credentials...");
+      return toast.loading("Verifying credentials...");
     },
 
-    onSuccess: async (data, variables, contextToastId) => {
+    onSuccess: (data, variables, contextToastId) => {
       toast.dismiss(contextToastId);
-      toast.success("Identity verified! Dispatching authentication code...");
+      toast.success("Welcome back!");
 
-      queryClient.setQueryData(["auth-user"], {
-        id: data.user.id,
-        email: data.user.email,
-        username: data.user.user_metadata?.username || "Investor",
-        firstName: data.user.user_metadata?.first_name || "",
-        lastName: data.user.user_metadata?.last_name || "",
-        isVerified: !!data.user.email_confirmed_at,
-        isOtpVerified: false,
-      });
+      if (data.data.role === "admin") return router.push("/admin/dashboard");
 
-      try {
-        await fetch("/api/v1/auth/send-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: data.user.id,
-            email: data.user.email,
-            firstName: data.user.user_metadata?.first_name || "",
-          }),
-        });
-
-        router.push("/auth/verify-otp");
-      } catch (err) {
-        toast.error("Failed to seed transaction OTP. Contact network manager.");
-      }
+      router.push("/dashboard");
     },
-    onError: (error: any, variables, contextToastId) => {
+
+    onError(error, variables, contextToastId) {
       toast.dismiss(contextToastId);
-      toast.error(error.message || "Invalid login credentials.");
+      toast.error(error.message);
     },
   });
 
@@ -60,71 +33,34 @@ export function useLoginMutation() {
 }
 
 export function useRegisterMutation() {
-  const queryClient = useQueryClient();
   const router = useRouter();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async (formData: RegisterSchemaInput) => {
-      // 1. Core user registration with Supabase Auth
-      const userData = await AuthService.registerUser(formData);
+    mutationFn: AuthApi.register,
 
-      if (!userData?.user) {
-        throw new Error(
-          "Initialization vectors failed to assign account profiles.",
-        );
-      }
-      return userData;
-    },
     onMutate: () => {
       return toast.loading("Processing validation records...");
     },
-    onSuccess: async (data, variables, contextToastId) => {
+
+    onSuccess(data, variables, contextToastId) {
       toast.dismiss(contextToastId);
       toast.success(
-        "Security profile initialized! Please request your access token from your manager.",
+        "Registration successful! Please check your email to verify your account.",
       );
-
-      queryClient.setQueryData(["auth-user"], {
-        id: data.user?.id,
-        email: data.user?.email,
-        username: data.user?.user_metadata?.username || "Investor",
-        firstName:
-          data.user?.user_metadata?.first_name || variables.firstname || "",
-        lastName:
-          data.user?.user_metadata?.last_name || variables.lastname || "",
-        isVerified: false,
-        isOtpVerified: false,
-      });
-
-      try {
-        await fetch("/api/v1/auth/send-email-verification", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: data.user?.id,
-            email: data.user?.email,
-            firstName: data.user?.user_metadata?.first_name || "",
-          }),
-        });
-
-        router.push("/auth/verify-email");
-      } catch (err) {
-        toast.error("Failed to seed transaction OTP. Contact network manager.");
-      }
+      router.push(
+        `/auth/verify-email?email=${encodeURIComponent(data.data.email)}`,
+      );
     },
+
     onError: (error: any, variables, contextToastId) => {
       toast.dismiss(contextToastId);
       if (error.status === 429) {
         alert("Too many attempts. Please try again in an hour.");
       } else {
-        toast.error(
-          error.message ||
-            "Registration sequence failed. Please verify credentials.",
-        );
+        toast.error(error.message);
       }
     },
   });
-
   return { mutate, isPending };
 }
 

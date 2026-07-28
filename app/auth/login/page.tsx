@@ -69,19 +69,21 @@ function LoginFormContent({
         return (
           <div key={field.id}>
             {field.fieldName === "password" ? (
-              <>
+              <div className="flex flex-col space-y-1.5">
                 <FormField
                   field={field}
                   register={register}
                   error={fieldError}
                 />
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-xs text-[#dabc17]"
-                >
-                  Forgot password?
-                </Link>
-              </>
+                <div className="flex justify-end">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-xs text-[#dabc17] hover:underline transition-all"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              </div>
             ) : (
               <FormField field={field} register={register} error={fieldError} />
             )}

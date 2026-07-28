@@ -32,7 +32,6 @@ function ResetPasswordFormContent() {
     resolver: zodResolver(resetPasswordSchema),
   });
 
-  // 🚀 2. MUTATION HANDLER TO OVERWRITE PASSWORDS ON THE BACKEND
   const updatePasswordMutation = useMutation({
     mutationFn: async (values: ResetPasswordInput) => {
       const response = await fetch("/api/v1/auth/confirm-password-reset", {
@@ -177,7 +176,6 @@ function ResetPasswordFormContent() {
   );
 }
 
-// 🚀 3. ROOT EXPORT WRAPPED IN SUSPENSE FOR NEXT.JS BUILD SAFETY
 export default function ResetPasswordPage() {
   return (
     <div className="flex justify-center items-center min-h-screen p-4 bg-black text-white antialiased">

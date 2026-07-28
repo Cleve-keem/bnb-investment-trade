@@ -1,31 +1,33 @@
 import { resendService } from "@/constants";
-import supabase from "@/utils/supabase/supabaseClient";
 import { NextResponse } from "next/server";
+import { createClient } from "@/libs/supabase/server";
 
-export async function POST(request: Request) {
+export async function POST() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const userId = user?.user_metadata.id;
+
   try {
-    const { userId, email, firstName } = await request.json();
-
-    if (!userId || !email) {
+    if (!userId || !user.email) {
       return NextResponse.json(
         { error: "Missing identity payloads." },
         { status: 400 },
       );
     }
 
-    // Generate a random 6-digit OTP code and set an expiration time for 10 minutes from now
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
     const expirationTime = new Date(Date.now() + 10 * 60 * 1000);
 
-    // 2. Clear out any previous stale OTP entries for this user to keep data clean
     await supabase.from("security_otps").delete().eq("user_id", userId);
 
-    // 3. Save the fresh token record securely in the public schema
     const { error: dbError } = await supabase.from("security_otps").insert({
       user_id: userId,
-      otp_code: generatedOtp, // Checked: matches your verify route selector
+      otp_code: generatedOtp,
       expires_at: expirationTime.toISOString(),
-      email: email,
+      email: user.email,
     });
 
     if (dbError) throw new Error(`Database record failure: ${dbError.message}`);
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
     // 4. Dispatch the completely customized transactional email via Resend
     const { data, error: mailError } = await resendService.emails.send({
       from: "BNB Security Node <onboarding@resend.dev>", // Note: strictly limited to your own account email until domain verification passes
-      to: email,
+      to: user.email,
       subject:
         "🔒 BNB Security Action Requested: BNB Acceptance Verification Code to proceed",
       html: `
@@ -43,7 +45,7 @@ export async function POST(request: Request) {
           </h2>
           
           <p style="font-size: 15px; color: #111111; line-height: 1.5; margin-top: 16px;">
-            Hello ${firstName || "Investor"},
+            Hello ${user.user_metadata.firstName || "Investor"},
           </p>
           
           <p style="font-size: 14px; color: #333333; line-height: 1.5;">
@@ -76,7 +78,6 @@ export async function POST(request: Request) {
       message: "Security token matrix dispatched.",
     });
   } catch (error: any) {
-    // 🌟 FIX 2: Surface the explicit node trace to your terminal console so you can see exactly why it failed
     console.error("❌ SEND_OTP_ROUTE_CRASH:", error);
 
     return NextResponse.json(
