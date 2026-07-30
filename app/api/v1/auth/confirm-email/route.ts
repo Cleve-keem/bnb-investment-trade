@@ -1,10 +1,14 @@
-import supabase from "@/libs/supabase/browser";
+import { createClient } from "@/libs/supabase/server";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   try {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get("token");
 
@@ -31,25 +35,21 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${baseUrl}/auth/login?error=token_expired`);
     }
 
-    // 3. Update User configuration parameters inside Supabase Auth management layers directly!
-    // We update user_metadata so Supabase is natively aware of their verification check step.
     const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
       record.user_id,
       {
         user_metadata: { isVerified: true },
-        email_confirm: true, // Force system-level verification status true sync
+        email_confirm: true,
       },
     );
 
     if (authUpdateError) throw authUpdateError;
 
-    // 4. Delete the used link record tokens cleanly
     await supabase
       .from("email_verifications")
       .delete()
       .eq("user_id", record.user_id);
 
-    // 5. Route user safely directly onto the frontend interface with confirmation hooks
     return NextResponse.redirect(`${baseUrl}/auth/login?verified=true`);
   } catch (error: any) {
     console.error("❌ CONFIRM_EMAIL_ROUTE_CRASH:", error);
