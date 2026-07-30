@@ -1,4 +1,4 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { AuthError, SupabaseClient } from "@supabase/supabase-js";
 import { LoginSchemaInput } from "@/libs/validations/auth";
 import { RegistrationFormType } from "@/types/auth";
 
@@ -12,11 +12,11 @@ export class AuthService {
     });
 
     if (error) {
-      throw new Error(error.message);
+      throw new AuthError(error.message);
     }
 
     if (!data.user) {
-      throw new Error("Authentication failed.");
+      throw new AuthError("Authentication failed.");
     }
 
     console.log(data);
@@ -44,6 +44,7 @@ export class AuthService {
 
     if (error) {
       console.log(error.message);
+      throw new AuthError(error.message);
     }
 
     return data;

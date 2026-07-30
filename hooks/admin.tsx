@@ -1,4 +1,4 @@
-import supabase from "@/libs/supabase/browser";
+import { createClient } from "@/libs/supabase/browser";
 import { AdminUser } from "@/types/admin";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -6,6 +6,8 @@ import { toast } from "sonner";
 
 // 1. Fetch All Users with Portfolio and OTP status
 export function useAdminDashboardList() {
+  const supabase = createClient();
+
   const {
     data: users,
     isPending,
@@ -68,6 +70,7 @@ export function useAdminDashboardList() {
 
 // 2. Mutation: Update User Balance & Yield
 export function useUpdateBalanceMutation() {
+  const supabase = createClient();
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const queryClient = useQueryClient();
 
@@ -106,6 +109,7 @@ export function useUpdateBalanceMutation() {
 // 3. Mutation: Toggle User Suspension / Revoke Access
 export function useToggleSuspendMutation() {
   const queryClient = useQueryClient();
+  const supabase = createClient();
 
   const toggleSuspendMutation = useMutation({
     mutationFn: async ({

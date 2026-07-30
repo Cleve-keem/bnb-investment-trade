@@ -1,9 +1,11 @@
 "use client";
 
-import supabase from "@/libs/supabase/browser";
+import { createClient } from "@/libs/supabase/browser";
 import { useQuery } from "@tanstack/react-query";
 
 export function useUser() {
+  const supabase = createClient();
+  
   return useQuery({
     queryKey: ["auth-user"],
     queryFn: async () => {
@@ -12,8 +14,6 @@ export function useUser() {
         error,
       } = await supabase.auth.getSession();
       if (error || !session?.user) return null;
-
-      console.log(session);
 
       const { data: profile, error: profileError } = await supabase
         .from("users")

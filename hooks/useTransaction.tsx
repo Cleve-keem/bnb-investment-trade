@@ -1,7 +1,9 @@
-import supabase from "@/libs/supabase/browser";
+import { createClient } from "@/libs/supabase/browser";
 import { useQuery } from "@tanstack/react-query";
 
 export default function useTransaction() {
+  const supabase = createClient();
+
   const { data: transactions, isLoading: loadingLedger } = useQuery({
     queryKey: ["ledger-history"],
     queryFn: async () => {

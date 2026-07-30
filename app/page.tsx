@@ -5,18 +5,21 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Shield, TrendingUp, BarChart3, ArrowRight } from "lucide-react";
-import supabase from "@/libs/supabase/browser";
+import { createClient } from "@/libs/supabase/browser";
 
 export default function Home() {
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
+    const supabase = createClient();
+
     async function checkSession() {
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
+
         if (session) {
           router.replace("/dashboard");
         } else {
@@ -29,6 +32,15 @@ export default function Home() {
     }
     checkSession();
   }, [router]);
+
+  // 3. Prevent content layout flashing while confirming active token sessions
+  //  if (checkingAuth) {
+  //    return (
+  //      <div className="flex h-screen w-screen items-center justify-center bg-background">
+  //        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+  //      </div>
+  //    );
+  //  }
 
   if (checkingAuth) {
     return (

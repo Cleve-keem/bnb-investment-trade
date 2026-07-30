@@ -1,7 +1,9 @@
-import supabase from "@/libs/supabase/browser";
+import { createClient } from "@/libs/supabase/browser";
 import { useQuery } from "@tanstack/react-query";
 
 export function usePortfolio() {
+  const supabase = createClient();
+  
   const { data: portfolio, isLoading: loadingPortfolio } = useQuery({
     queryKey: ["portfolio-metrics"],
     queryFn: async () => {
