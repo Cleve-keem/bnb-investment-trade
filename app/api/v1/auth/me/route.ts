@@ -2,10 +2,13 @@ import { ApiResponse } from "@/libs/http/api-response";
 import { createClient } from "@/libs/supabase/server";
 import { UserRepository } from "@/libs/repositories/user.repository";
 import { GetCurrentUserUseCase } from "@/libs/application/get-current-user.use-case";
+import { cookies } from "next/headers";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    
     const useCase = new GetCurrentUserUseCase(new UserRepository(supabase));
     const {
       data: { user },

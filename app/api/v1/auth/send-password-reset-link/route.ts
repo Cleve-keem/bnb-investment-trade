@@ -2,9 +2,13 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { resendService } from "@/constants";
 import UserService from "@/services/user";
-import supabase from "@/libs/supabase/browser";
+import { cookies } from "next/headers";
+import { createClient } from "@/libs/supabase/server";
 
 export async function POST(req: Request) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+  
   try {
     const { email } = await req.json();
 

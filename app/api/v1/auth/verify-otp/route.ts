@@ -1,29 +1,12 @@
-import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@/libs/supabase/server";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
     const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
-            );
-          },
-        },
-      },
-    );
-
-    // 1. Get authenticated user from session cookie
     const {
       data: { user },
       error: authError,
@@ -45,7 +28,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Query security OTP record
     const { data: records, error: dbError } = await supabase
       .from("security_otps")
       .select("*")
@@ -60,7 +42,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Check expiration
     if (new Date() > new Date(records.expires_at)) {
       return NextResponse.json(
         { success: false, error: "Security token has expired." },
@@ -68,10 +49,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Delete consumed OTP
     await supabase.from("security_otps").delete().eq("user_id", user.id);
 
-    // 5. Update public.users table flag (FIXED TARGET TABLE)
     const { error: updateError } = await supabase
       .from("users")
       .update({ is_otp_verified: true })
