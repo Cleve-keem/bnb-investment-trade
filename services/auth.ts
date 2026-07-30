@@ -1,9 +1,10 @@
-import supabase from "@/libs/supabase/browser";
+import { createClient } from "@/libs/supabase/browser";
 import { LoginSchemaInput } from "@/libs/validations/auth";
 import { RegistrationFormType } from "@/types/auth";
 
 export default class AuthService {
   static async registerUser(credentials: RegistrationFormType) {
+    const supabase = createClient();
     try {
       const { data, error } = await supabase.auth.signUp({
         email: credentials.email.trim(),
@@ -43,6 +44,7 @@ export default class AuthService {
 
   static async loginUser(credential: LoginSchemaInput) {
     try {
+      const supabase = createClient();
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
           email: credential.email,
@@ -50,7 +52,7 @@ export default class AuthService {
         });
 
       if (authError || !authData.user) throw authError;
-      
+
       const { data: profile, error: profileError } = await supabase
         .from("users")
         .select("id, email, first_name, last_name, user_role, is_suspended")
@@ -80,6 +82,7 @@ export default class AuthService {
 
   static async forgotPassword(email: string) {
     try {
+      const supabase = createClient();
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
@@ -94,6 +97,7 @@ export default class AuthService {
 
   static async resetPassword(password: string) {
     try {
+      const supabase = createClient();
       const { data, error } = await supabase.auth.updateUser({
         password: password,
       });
