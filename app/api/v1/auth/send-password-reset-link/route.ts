@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { resendService } from "@/constants";
-// import UserService from "@/services/user";
+import UserService from "@/services/user";
 import { cookies } from "next/headers";
 import { createClient } from "@/libs/supabase/server";
 
@@ -20,14 +20,14 @@ export async function POST(req: Request) {
     }
 
     const { profileError, userProfile } =
-      // await UserService.getUserByEmail(email);
+      await UserService.getUserByEmail(email);
 
-    // if (profileError || !userProfile) {
-    //   return NextResponse.json(
-    //     { error: "No active profile matches this email address." },
-    //     { status: 404 },
-    //   );
-    // }
+    if (profileError || !userProfile) {
+      return NextResponse.json(
+        { error: "No active profile matches this email address." },
+        { status: 404 },
+      );
+    }
 
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const tokenExpiration = new Date(Date.now() + 24 * 60 * 60 * 1000);
