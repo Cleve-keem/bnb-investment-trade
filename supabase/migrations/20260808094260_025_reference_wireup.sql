@@ -33,7 +33,7 @@ set search_path = public
 as $$
 declare
     v_admin_id  uuid := auth.uid();
-    v_txn       public.wallet_transactions;
+    v_txn       uuid;
     v_adj       public.admin_wallet_adjustments;
     v_reference text := public.generate_reference('ADM');
 begin
@@ -102,7 +102,7 @@ begin
         notes
     )
     values (
-        v_txn.id,
+        v_txn,
         v_admin_id,
         p_adjustment_type,
         p_reason,

@@ -9,6 +9,280 @@
 -- reference string that gets generated inside each function body.
 -- =============================================================================
 
+-- IMPORTANT:
+-- credit_wallet(), debit_wallet(), and log_audit() must be defined before
+-- the higher-level functions in this migration call them.
+-- =============================================================================
+
+
+-- =============================================================================
+-- CORE WALLET CREDIT
+-- =============================================================================
+
+create or replace function public.credit_wallet(
+    p_wallet_id uuid,
+    p_amount numeric,
+    p_transaction_type public.wallet_transaction_type,
+    p_reference text,
+    p_description text default null,
+    p_created_by uuid default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    v_wallet public.wallets;
+    v_balance_before numeric(18,2);
+    v_balance_after numeric(18,2);
+    v_transaction_id uuid;
+    v_created_by uuid := p_created_by;
+begin
+
+    if p_amount <= 0 then
+        raise exception
+            'credit_wallet: amount must be greater than zero';
+    end if;
+
+    -- Lock wallet for concurrency safety.
+    select *
+    into v_wallet
+    from public.wallets
+    where id = p_wallet_id
+    for update;
+
+    if not found then
+        raise exception
+            'credit_wallet: wallet % not found',
+            p_wallet_id;
+    end if;
+
+    if v_wallet.status <> 'active' then
+        raise exception
+            'credit_wallet: wallet % is not active',
+            p_wallet_id;
+    end if;
+
+    v_balance_before := v_wallet.balance;
+    v_balance_after := v_balance_before + p_amount;
+
+    -- Update wallet balance.
+    update public.wallets
+    set
+        balance = v_balance_after,
+        version = version + 1,
+        updated_at = timezone('utc', now())
+    where id = p_wallet_id;
+
+    -- Create immutable ledger entry.
+    insert into public.wallet_transactions (
+        wallet_id,
+        amount,
+        balance_before,
+        balance_after,
+        transaction_type,
+        reference,
+        description,
+        currency,
+        metadata,
+        created_by
+    )
+    values (
+        p_wallet_id,
+        p_amount,
+        v_balance_before,
+        v_balance_after,
+        p_transaction_type,
+        p_reference,
+        p_description,
+        v_wallet.currency,
+        '{}'::jsonb,
+        v_created_by
+    )
+    returning id into v_transaction_id;
+
+    return v_transaction_id;
+end;
+$$;
+
+
+-- =============================================================================
+-- CORE WALLET DEBIT
+-- =============================================================================
+
+create or replace function public.debit_wallet(
+    p_wallet_id uuid,
+    p_amount numeric,
+    p_transaction_type public.wallet_transaction_type,
+    p_reference text,
+    p_description text default null,
+    p_created_by uuid default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    v_wallet public.wallets;
+    v_balance_before numeric(18,2);
+    v_balance_after numeric(18,2);
+    v_spendable_balance numeric(18,2);
+    v_transaction_id uuid;
+    v_created_by uuid := p_created_by;
+begin
+
+    if p_amount <= 0 then
+        raise exception
+            'debit_wallet: amount must be greater than zero';
+    end if;
+
+    -- Lock wallet for concurrency safety.
+    select *
+    into v_wallet
+    from public.wallets
+    where id = p_wallet_id
+    for update;
+
+    if not found then
+        raise exception
+            'debit_wallet: wallet % not found',
+            p_wallet_id;
+    end if;
+
+    if v_wallet.status <> 'active' then
+        raise exception
+            'debit_wallet: wallet % is not active',
+            p_wallet_id;
+    end if;
+
+    v_balance_before := v_wallet.balance;
+
+    -- Locked funds cannot be spent.
+    v_spendable_balance :=
+        v_wallet.balance - v_wallet.locked_balance;
+
+    if p_amount > v_spendable_balance then
+        raise exception
+            'debit_wallet: insufficient spendable balance. Available: %, requested: %',
+            v_spendable_balance,
+            p_amount;
+    end if;
+
+    v_balance_after := v_balance_before - p_amount;
+
+    -- Update wallet.
+    update public.wallets
+    set
+        balance = v_balance_after,
+        version = version + 1,
+        updated_at = timezone('utc', now())
+    where id = p_wallet_id;
+
+    -- Create immutable ledger entry.
+    insert into public.wallet_transactions (
+        wallet_id,
+        amount,
+        balance_before,
+        balance_after,
+        transaction_type,
+        reference,
+        description,
+        currency,
+        created_by,
+        metadata
+    )
+    values (
+        p_wallet_id,
+        -p_amount,
+        v_balance_before,
+        v_balance_after,
+        p_transaction_type,
+        p_reference,
+        p_description,
+        v_wallet.currency,
+        v_created_by,
+        '{}'::jsonb
+    )
+    returning id into v_transaction_id;
+
+    return v_transaction_id;
+end;
+$$;
+
+
+-- =============================================================================
+-- CORE AUDIT LOGGER
+-- =============================================================================
+
+create or replace function public.log_audit(
+    p_actor_id uuid,
+    p_action text,
+    p_entity text,
+    p_entity_id uuid,
+    p_metadata jsonb default '{}'::jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    v_audit_id uuid;
+    v_reference text;
+    v_actor_role public.user_role;
+    v_target_user_id uuid;
+begin
+
+    v_reference := 'AUD-' || upper(
+    replace(gen_random_uuid()::text, '-', '')
+);
+
+    -- Get actor's role when an actor exists.
+    if p_actor_id is not null then
+
+        select role
+        into v_actor_role
+        from public.users
+        where id = p_actor_id;
+
+    end if;
+
+    -- Try to identify the target user.
+    v_target_user_id := p_actor_id;
+
+    insert into public.audit_logs (
+        id,
+        reference,
+        actor_id,
+        actor_role,
+        target_user_id,
+        action,
+        entity,
+        entity_id,
+        action_status,
+        metadata
+    )
+    values (
+        gen_random_uuid(),
+        v_reference,
+        p_actor_id,
+        v_actor_role,
+        v_target_user_id,
+        p_action,
+        p_entity,
+        p_entity_id,
+        'success',
+        coalesce(p_metadata, '{}'::jsonb)
+    )
+    returning id into v_audit_id;
+
+    return v_audit_id;
+
+end;
+$$;
+
 -- =============================================================================
 -- ADMIN AUTHORIZATION
 -- =============================================================================
@@ -51,7 +325,7 @@ set search_path = public
 as $$
 declare
     v_admin_id  uuid := auth.uid();
-    v_txn       public.wallet_transactions;
+    v_txn       uuid;
     v_adj       public.admin_wallet_adjustments;
     v_reference text := public.generate_reference('ADM');
 begin
@@ -112,7 +386,7 @@ begin
     )
     values (
         v_reference,
-        v_txn.id,
+        v_txn,
         p_wallet_id,
         (
             select user_id
